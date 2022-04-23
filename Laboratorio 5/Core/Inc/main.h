@@ -63,6 +63,12 @@ void Error_Handler(void);
 #define Led_GPIO_Port GPIOC
 #define Button_Pin GPIO_PIN_0
 #define Button_GPIO_Port GPIOA
+#define Enable_Pin GPIO_PIN_12
+#define Enable_GPIO_Port GPIOB
+#define Forward_Pin GPIO_PIN_13
+#define Forward_GPIO_Port GPIOB
+#define Backward_Pin GPIO_PIN_14
+#define Backward_GPIO_Port GPIOB
 #define Pwm_Pin GPIO_PIN_8
 #define Pwm_GPIO_Port GPIOA
 #define Sensor_Pin GPIO_PIN_5

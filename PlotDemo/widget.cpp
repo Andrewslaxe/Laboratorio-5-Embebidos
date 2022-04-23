@@ -9,7 +9,7 @@
 
 #define Start 0x06
 #define Stop 0x07
-double RPMMin=NULL,RPMMax=0,Flag=0,RPm=0;
+double RPMMin=0,RPMMax=0,Flag=0,RPm=0,CurrentAct=0;
 double siz=0;
 
 
@@ -17,6 +17,7 @@ Widget::Widget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Widget)
 {
+
     ui->setupUi(this);
     ttl = new QSerialPort(this);
     serialBuffer = "";
@@ -26,7 +27,7 @@ Widget::Widget(QWidget *parent) :
         QString pname = serialPortInfo.portName();
         ui->comboBox->addItem(pname);
     }
-    Widget:setupPlot();
+    setupPlot();
 }
 
 Widget::~Widget()
@@ -43,11 +44,11 @@ void Widget::setupPlot(){
 
     ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
     ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
-    ui->customPlot->graph(0)->setData(x, y);
-    ui->customPlot->graph(1)->setData(z, w);
+    ui->customPlot->graph(0)->setData(x, RpmGraph);
+    ui->customPlot->graph(1)->setData(y, CurrentGraph);
     ui->customPlot->graph(1)->setPen(QPen(Qt::red));
     ui->customPlot->graph(0)->setName("RPM");
-    ui->customPlot->graph(1)->setName("Acceleracion");
+    ui->customPlot->graph(1)->setName("Corriente");
     ui->customPlot->plotLayout()->insertRow(0);
     ui->customPlot->plotLayout()->addElement(0, 0, new QCPTextElement(ui->customPlot, "Velocidad - Motor DC", QFont("sans", 12, QFont::Bold)));
 
@@ -56,8 +57,6 @@ void Widget::setupPlot(){
     legendFont.setPointSize(9); // and make a bit smaller for legend
     ui->customPlot->legend->setFont(legendFont);
     ui->customPlot->legend->setBrush(QBrush(QColor(255,255,255,230)));
-    // by default, the legend is in the inset layout of the main axis rect. So this is how we access it to change legend placement:
-    //ui->customPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
 
     ui->customPlot->xAxis->setLabel("Time Relative");
     ui->customPlot->yAxis->setLabel("RPM.");
@@ -66,7 +65,6 @@ void Widget::setupPlot(){
     ui->customPlot->yAxis2->setLabel("mA");
     ui->customPlot->yAxis2->setRange(0, 1000);
     ui->customPlot->yAxis2->setVisible(true);
-
     ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 
     ui->customPlot->replot();
@@ -85,38 +83,19 @@ void Widget::makeplot(){
     }
 
     else{*/
+    CurrentGraph.append(CurrentAct);
     RpmGraph.append(RPm);
     x.append(siz);
-
+    y.append(siz);
     ui->customPlot->graph(0)->setData(x, RpmGraph);
+    ui->customPlot->graph(1)->setData(y,CurrentGraph);
     ui->customPlot->replot();
     ui->customPlot->rescaleAxes();
     ui->customPlot->update();
 }
 
-void Widget::on_pushButton_clicked()
-{
-    uint8_t Tam=0;
-    QString Txt;
-    uint16_t Info;
-    if(ui->lineEdit->text() != ""){
-        Txt = ui->lineEdit->text();
-        Info=Txt.toInt();
-        if(Info<256){
-            Tam=1;
-        }
-        else{
-            Tam=2;
-        }
-        Send(1,Info,Tam);
-    }else{
-        QMessageBox msgBox;
-        msgBox.setText("Escriba un numero de 0 a 50 en el campo");
-        msgBox.exec();
-    }
 
-}
-void Widget::Send(int cmd,uint16_t Info,uint8_t Tam){
+void Widget::Send(int cmd,uint16_t Info,uint8_t Tam,uint8_t Info2){
     //Protocolo
     uint8_t Count,Parity=0;;
     QByteArray data;
@@ -124,13 +103,18 @@ void Widget::Send(int cmd,uint16_t Info,uint8_t Tam){
     data.append(Start);
     data.append(Tam);
     data.append(cmd);
-    if(Tam<2){
-        data.append(Info);
-    }
-    else {
-        data.append(0x00FF & (Info >> 8));
-        data.append(0x00FF & Info);
+    if(Info2==0){
+        if(Tam<2){
+            data.append(Info);
+        }
+        else {
+            data.append(0x00FF & (Info >> 8));
+            data.append(0x00FF & Info);
 
+        }
+        if(Info2!=0){
+            data.append(Info2);
+        }
     }
 
     for(Count=0;Count<data.length();Count++){
@@ -173,12 +157,12 @@ void Widget::readSerial()
             Temp2+=256;
         }
         Data=Temp1|Temp2;
-        for(Aux=0;Aux<Size+3;Aux++){
+        for(Aux =0;Aux<Size+3;Aux++){
             Parity^=serialData.at(Aux);
         }
         Check=serialData.at(Size+3);
         if(Parity==Check || Parity==Check+256){
-            processSerial(Data);
+            processSerial(Data,serialData.at(2));
             serialData.clear();
         }
         else{
@@ -188,12 +172,17 @@ void Widget::readSerial()
     }
 }
 
-void Widget::processSerial(double data){
+void Widget::processSerial(double data,int cmd){
     QString Aux,Datos;
+    double Rpm=0;
     Datos=QString::number(data);
     qDebug()<< Datos;
-
-    double Rpm=data;
+    if(cmd==1){
+        Rpm=data;
+    }
+    else if(cmd==2){
+        CurrentAct=data;
+    }
     if(Rpm>10000);
 
     else{
@@ -219,7 +208,47 @@ void Widget::processSerial(double data){
     }
 
 }
+void Widget::on_pushButton_clicked()
+{
+    uint8_t Tam=0;
+    QString Txt1,Txt2;
+    uint16_t Pwm,Time;
+    Txt1 = ui->lineEdit->text();
+    Txt2 = ui->lineEdit_2->text();
+    if(ui->lineEdit->text() != "" && ui->lineEdit_2->text() != ""){
+        if(Txt1.toInt()>=0 && Txt1.toInt()<100){
+            if(Txt2.toInt()>=0){
+                Txt2 = ui->lineEdit_2->text();
+                Pwm=Txt1.toInt();
+                Time=Txt2.toInt();
+                if(Time<256){
+                    Tam=1;
+                }
+                else{
+                    Tam=2;
+                }
+                Send(42,Time,Tam,Pwm);  //Va hasta 100
 
+            }
+            else{
+                QMessageBox msgBox;
+                msgBox.setText("Ingrese un valor de tiempo valido");
+                msgBox.exec();
+            }
+        }
+        else{
+            QMessageBox msgBox;
+            msgBox.setText("En PWM ingrese un valor de 0 a 100");
+            msgBox.exec();
+        }
+
+    }else{
+        QMessageBox msgBox;
+        msgBox.setText("Escriba un numero en el campo del PWM y Tiempo");
+        msgBox.exec();
+    }
+
+}
 void Widget::on_pushButton_2_clicked()
 {
     QString ttl_port_name = ui->comboBox->currentText();
@@ -234,14 +263,18 @@ void Widget::on_pushButton_2_clicked()
                 ttl->setParity(QSerialPort::NoParity);
                 ttl->setStopBits(QSerialPort::OneStop);
                 QObject::connect(ttl, SIGNAL(readyRead()), this, SLOT(readSerial()));
+                Send(0,2,1,0);
+                Send(1,2,1,0); //Le abre la Flag a la stm para enviar datos
                 ui->label_12->setText("Conectado");
                 ui->pushButton_2->setText("Cerrar");
+
             }
             else{
                 ui->label_12->setText("Puerto no disponible");
             }
         }
     }else{
+        Send(1,2,1,0); //Le cierra la Flag a la stm para enviar datos
         ttl->close();
         QObject::disconnect(ttl, SIGNAL(readyRead()), this, SLOT(readSerial()));
         ui->pushButton_2->setText("Abrir");
@@ -257,5 +290,13 @@ void Widget::on_pushButton_3_clicked()
         QString pname = serialPortInfo.portName();
         ui->comboBox->addItem(pname);
     }
+}
+
+
+
+
+void Widget::on_pushButton_4_clicked()
+{
+    int xd=0;
 }
 

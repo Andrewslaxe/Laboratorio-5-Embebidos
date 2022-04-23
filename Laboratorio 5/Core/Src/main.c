@@ -48,10 +48,12 @@ void Send(int Cmd, int Info);
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
-uint8_t texto[32],StartFlag=0,AuxLen=0,contador=90;
-int rpm=0,Flag=0,Sensorcounter=0,ft=0,st,Aux=0;
+double Time;
+uint8_t texto[32],SendFlag=0,AuxLen=0,contador=90;
+int rpm=0,Flag=0,Sensorcounter=0,ft=0,st,Aux=0,pwm=0,Current=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,6 +63,7 @@ static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -103,10 +106,13 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim2);
   HAL_TIM_Base_Start(&htim3);
+  HAL_TIM_Base_Start(&htim4);
   HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+  HAL_ADC_Start(&hadc1);
   int Val=0;
   /* USER CODE END 2 */
 
@@ -114,13 +120,24 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	 if(__HAL_TIM_GET_COUNTER(&htim3)>=(1000) ){
-		 if(StartFlag!=0){
-			 Send(01,rpm);
-		 }
-
-		 __HAL_TIM_SET_COUNTER(&htim3, 0);
+	  if(SendFlag==1){
+		  if(__HAL_TIM_GET_COUNTER(&htim4)>=(Time*100)){
+		  		  if(Time>=50){  //Si el tiempo supera el timer entonces:
+		  			  __HAL_TIM_SET_COUNTER(&htim4,0);
+		  			  Time-=50;
+		  		  }
+		  		  else{
+		  			   Clear();
+		  		  }
+		  	  }
+		  	  if(__HAL_TIM_GET_COUNTER(&htim3)>=(1000) ){
+		  			 Current=HAL_ADC_GetValue(&hadc1);
+		  			 Send(02,rpm);
+		  			 Send(03,Current);
+		  			__HAL_TIM_SET_COUNTER(&htim3, 0);
+		  	  }
 	  }
+
 
 	  /*if(HAL_GPIO_ReadPin(Sensor_GPIO-_Port, Sensor_Pin)==1){
 		  Sensorcounter++;
@@ -204,7 +221,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -253,9 +270,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 738;
+  htim1.Init.Prescaler = 9600;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65000;
+  htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -398,6 +415,65 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 9600;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 50001;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+  HAL_TIM_MspPostInit(&htim4);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -415,6 +491,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(Led_GPIO_Port, Led_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, Enable_Pin|Forward_Pin|Backward_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : Led_Pin */
   GPIO_InitStruct.Pin = Led_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -428,6 +507,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(Button_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : Enable_Pin Forward_Pin Backward_Pin */
+  GPIO_InitStruct.Pin = Enable_Pin|Forward_Pin|Backward_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /*Configure GPIO pin : Sensor_Pin */
   GPIO_InitStruct.Pin = Sensor_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -439,13 +525,15 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void Clear(){
-	int Aux;
-	for(Aux=0;Aux<30;Aux++){
-		texto[Aux]=0;
-	}
+	rpm=0;
+	pwm=0;
+	Time=0;
+	TIM1->CCR1=0;
 }
 void Send(int Cmd, int Info){
-	Clear();
+
+	//Cmd=0  Rpm
+	//Cmd=1	 mA
 	int Size=0x00,Parity=0,Contador=0;
 	uint8_t *Data;
 
@@ -468,38 +556,57 @@ void Send(int Cmd, int Info){
 	}
 	Data[Size+3]=Parity;
 	Data[Size+4]=Stop;
-	/*
-	sprintf(texto,"%d%d%d%d%d%d",Start,Size,Cmd,Info,Parity,Stop);
-	Data[Size+3]=Parity;
-	Data[Size+4]=Stop;
-	}*/
+
 	Contador=strlen(Data);
 	CDC_Transmit_FS(Data,strlen(Data));
 	free(Data);
 }
 
 void CDC_ReceiveCallBack(uint8_t* Buf, uint32_t Len){
-	if(StartFlag==0){
-		StartFlag++;
-	}
+	int Cmd,Aux;
 	int Temp=0,Parity=0,Size;
 	if(Buf[0]==Start && Buf[Len-1]==Stop){ //Protocolo
-		Size=Buf[1];
+		Size=Buf[1];0
+		Cmd=Buf[2];
 		if(Size==1){
 			Parity=Buf[0]^Buf[1]^Buf[2]^Buf[3];
 			Temp=Buf[3];
 		}
-		else{
-			Parity=Buf[0]^Buf[1]^Buf[2]^Buf[3]^Buf[4];
+		else if(Size==2){
 			Temp=(Buf[3]<< 8) | Buf[4];
 		}
-		if(Buf[Size+3]==Parity){
-			rpm=Temp;
-			TIM1->CCR1=65*rpm;
+		for(Aux=0;Aux<Len-3;Aux++){
+			Parity^=Buf[Aux];
+		}
+		if(Buf[Len-2]==Parity){
+			if(Cmd==1){ //Le pide a la STM enviar Info
+				SendFlag=1;
+			}
+			else if(Cmd==0){ //Le pide que deje de enviar Info
+				SendFlag=0;
+			}
+			else if(Cmd==2){ //Porcentaje PWM
+				pwm=Temp;
+				HAL_GPIO_WritePin(Enable_GPIO_Port, Enable_Pin, SET);
+				TIM1->CCR1=650*pwm;
+			}
+			else if(Cmd==3){    //RPM  Suponiendo q el TIM1 al máximo tiene una salida de 2000rpm
+				rpm=Temp;
+				TIM1->CCR1=(Temp*650/2);
+			}
+			else if(Cmd==4){ //Tiempo de envio en 100 ms
+				__HAL_TIM_SET_COUNTER(&htim4,0);
+				Time=Temp;
+			}
+			else if(Cmd==42){		//PWM y Tiempo
+				__HAL_TIM_SET_COUNTER(&htim4,0);
+				Time=Temp;
+				pwm=Buf[Len-3];
+				HAL_GPIO_WritePin(Enable_GPIO_Port, Enable_Pin, SET);
+				TIM1->CCR1=650*pwm;
+			}
 		}
 	}
-
-
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){

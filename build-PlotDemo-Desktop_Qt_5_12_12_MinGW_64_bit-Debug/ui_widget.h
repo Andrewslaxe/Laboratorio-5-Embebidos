@@ -38,31 +38,37 @@ public:
     QLabel *label_3;
     QComboBox *comboBox;
     QPushButton *pushButton_2;
+    QPushButton *pushButton_3;
     QLabel *label_5;
     QWidget *gridLayoutWidget;
     QGridLayout *gridLayout;
-    QLabel *label_7;
     QLabel *label_4;
     QLabel *RpmMax;
     QLabel *RpmAct;
     QLabel *RpmMin;
     QLabel *label_6;
+    QLabel *label_7;
     QWidget *gridLayoutWidget_2;
     QGridLayout *gridLayout_2;
-    QLabel *label_8;
     QLineEdit *lineEdit_3;
     QLabel *label_9;
+    QLabel *label_8;
     QLineEdit *lineEdit_4;
     QLabel *label_10;
+    QPushButton *pushButton_4;
+    QWidget *horizontalLayoutWidget;
+    QHBoxLayout *horizontalLayout_3;
+    QLabel *label_11;
+    QLabel *label_12;
 
     void setupUi(QWidget *Widget)
     {
         if (Widget->objectName().isEmpty())
             Widget->setObjectName(QString::fromUtf8("Widget"));
-        Widget->resize(772, 318);
+        Widget->resize(772, 581);
         customPlot = new QCustomPlot(Widget);
         customPlot->setObjectName(QString::fromUtf8("customPlot"));
-        customPlot->setGeometry(QRect(10, 150, 501, 151));
+        customPlot->setGeometry(QRect(10, 150, 531, 421));
         layoutWidget = new QWidget(Widget);
         layoutWidget->setObjectName(QString::fromUtf8("layoutWidget"));
         layoutWidget->setGeometry(QRect(10, 50, 551, 31));
@@ -103,7 +109,7 @@ public:
 
         layoutWidget1 = new QWidget(Widget);
         layoutWidget1->setObjectName(QString::fromUtf8("layoutWidget1"));
-        layoutWidget1->setGeometry(QRect(10, 80, 351, 51));
+        layoutWidget1->setGeometry(QRect(10, 80, 399, 51));
         horizontalLayout_2 = new QHBoxLayout(layoutWidget1);
         horizontalLayout_2->setSpacing(6);
         horizontalLayout_2->setContentsMargins(11, 11, 11, 11);
@@ -130,6 +136,12 @@ public:
 
         horizontalLayout_2->addWidget(pushButton_2);
 
+        pushButton_3 = new QPushButton(layoutWidget1);
+        pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
+        pushButton_3->setFont(font);
+
+        horizontalLayout_2->addWidget(pushButton_3);
+
         label_5 = new QLabel(Widget);
         label_5->setObjectName(QString::fromUtf8("label_5"));
         label_5->setGeometry(QRect(290, 0, 171, 41));
@@ -138,22 +150,16 @@ public:
         label_5->setFont(font1);
         gridLayoutWidget = new QWidget(Widget);
         gridLayoutWidget->setObjectName(QString::fromUtf8("gridLayoutWidget"));
-        gridLayoutWidget->setGeometry(QRect(560, 200, 211, 101));
+        gridLayoutWidget->setGeometry(QRect(560, 480, 211, 101));
         gridLayout = new QGridLayout(gridLayoutWidget);
         gridLayout->setSpacing(6);
         gridLayout->setContentsMargins(11, 11, 11, 11);
         gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
         gridLayout->setContentsMargins(0, 0, 0, 0);
-        label_7 = new QLabel(gridLayoutWidget);
-        label_7->setObjectName(QString::fromUtf8("label_7"));
-        QFont font2;
-        font2.setPointSize(12);
-        label_7->setFont(font2);
-
-        gridLayout->addWidget(label_7, 2, 0, 1, 1);
-
         label_4 = new QLabel(gridLayoutWidget);
         label_4->setObjectName(QString::fromUtf8("label_4"));
+        QFont font2;
+        font2.setPointSize(12);
         label_4->setFont(font2);
 
         gridLayout->addWidget(label_4, 0, 0, 1, 1);
@@ -179,20 +185,20 @@ public:
 
         gridLayout->addWidget(label_6, 1, 0, 1, 1);
 
+        label_7 = new QLabel(gridLayoutWidget);
+        label_7->setObjectName(QString::fromUtf8("label_7"));
+        label_7->setFont(font2);
+
+        gridLayout->addWidget(label_7, 2, 0, 1, 1);
+
         gridLayoutWidget_2 = new QWidget(Widget);
         gridLayoutWidget_2->setObjectName(QString::fromUtf8("gridLayoutWidget_2"));
-        gridLayoutWidget_2->setGeometry(QRect(560, 120, 211, 81));
+        gridLayoutWidget_2->setGeometry(QRect(560, 150, 211, 87));
         gridLayout_2 = new QGridLayout(gridLayoutWidget_2);
         gridLayout_2->setSpacing(6);
         gridLayout_2->setContentsMargins(11, 11, 11, 11);
         gridLayout_2->setObjectName(QString::fromUtf8("gridLayout_2"));
         gridLayout_2->setContentsMargins(0, 0, 0, 0);
-        label_8 = new QLabel(gridLayoutWidget_2);
-        label_8->setObjectName(QString::fromUtf8("label_8"));
-        label_8->setFont(font2);
-
-        gridLayout_2->addWidget(label_8, 0, 0, 1, 1);
-
         lineEdit_3 = new QLineEdit(gridLayoutWidget_2);
         lineEdit_3->setObjectName(QString::fromUtf8("lineEdit_3"));
 
@@ -204,6 +210,12 @@ public:
 
         gridLayout_2->addWidget(label_9, 1, 0, 1, 1);
 
+        label_8 = new QLabel(gridLayoutWidget_2);
+        label_8->setObjectName(QString::fromUtf8("label_8"));
+        label_8->setFont(font2);
+
+        gridLayout_2->addWidget(label_8, 0, 0, 1, 1);
+
         lineEdit_4 = new QLineEdit(gridLayoutWidget_2);
         lineEdit_4->setObjectName(QString::fromUtf8("lineEdit_4"));
 
@@ -212,6 +224,34 @@ public:
         label_10 = new QLabel(Widget);
         label_10->setObjectName(QString::fromUtf8("label_10"));
         label_10->setGeometry(QRect(640, 0, 131, 16));
+        pushButton_4 = new QPushButton(Widget);
+        pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
+        pushButton_4->setGeometry(QRect(630, 240, 80, 29));
+        pushButton_4->setFont(font);
+        horizontalLayoutWidget = new QWidget(Widget);
+        horizontalLayoutWidget->setObjectName(QString::fromUtf8("horizontalLayoutWidget"));
+        horizontalLayoutWidget->setGeometry(QRect(410, 80, 331, 51));
+        horizontalLayout_3 = new QHBoxLayout(horizontalLayoutWidget);
+        horizontalLayout_3->setSpacing(6);
+        horizontalLayout_3->setContentsMargins(11, 11, 11, 11);
+        horizontalLayout_3->setObjectName(QString::fromUtf8("horizontalLayout_3"));
+        horizontalLayout_3->setContentsMargins(0, 0, 0, 0);
+        label_11 = new QLabel(horizontalLayoutWidget);
+        label_11->setObjectName(QString::fromUtf8("label_11"));
+        label_11->setMinimumSize(QSize(0, 0));
+        label_11->setMaximumSize(QSize(57, 16777215));
+        label_11->setFont(font);
+
+        horizontalLayout_3->addWidget(label_11);
+
+        label_12 = new QLabel(horizontalLayoutWidget);
+        label_12->setObjectName(QString::fromUtf8("label_12"));
+        label_12->setMinimumSize(QSize(0, 0));
+        label_12->setMaximumSize(QSize(500, 16777215));
+        label_12->setFont(font);
+
+        horizontalLayout_3->addWidget(label_12);
+
 
         retranslateUi(Widget);
 
@@ -221,21 +261,25 @@ public:
     void retranslateUi(QWidget *Widget)
     {
         Widget->setWindowTitle(QApplication::translate("Widget", "RPM & Corriente CACD", nullptr));
-        label->setText(QApplication::translate("Widget", "RPM", nullptr));
-        label_2->setText(QApplication::translate("Widget", "Acceleracion(m/s*s)", nullptr));
-        pushButton->setText(QApplication::translate("Widget", "Agregar Punto", nullptr));
+        label->setText(QApplication::translate("Widget", "PWM", nullptr));
+        label_2->setText(QApplication::translate("Widget", "Tiempo(mS)", nullptr));
+        pushButton->setText(QApplication::translate("Widget", "Enviar", nullptr));
         label_3->setText(QApplication::translate("Widget", "Puerto:", nullptr));
         pushButton_2->setText(QApplication::translate("Widget", "Abrir", nullptr));
+        pushButton_3->setText(QApplication::translate("Widget", "Actualizar", nullptr));
         label_5->setText(QApplication::translate("Widget", "RPM y PWM", nullptr));
-        label_7->setText(QApplication::translate("Widget", "RPM M\303\255nimas", nullptr));
         label_4->setText(QApplication::translate("Widget", "RPM Actual", nullptr));
         RpmMax->setText(QString());
         RpmAct->setText(QString());
         RpmMin->setText(QString());
         label_6->setText(QApplication::translate("Widget", "RPM M\303\241ximas", nullptr));
+        label_7->setText(QApplication::translate("Widget", "RPM M\303\255nimas", nullptr));
+        label_9->setText(QApplication::translate("Widget", "Tiempo(mS)", nullptr));
         label_8->setText(QApplication::translate("Widget", "PWM(%)", nullptr));
-        label_9->setText(QApplication::translate("Widget", "Tiempo(S)", nullptr));
         label_10->setText(QApplication::translate("Widget", "Designed By: Jaime Peraza", nullptr));
+        pushButton_4->setText(QApplication::translate("Widget", "Enviar", nullptr));
+        label_11->setText(QApplication::translate("Widget", "Status:", nullptr));
+        label_12->setText(QString());
     } // retranslateUi
 
 };
