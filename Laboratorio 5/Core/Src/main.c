@@ -39,6 +39,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+void Clear();
 void Send(int Cmd, int Info);
 /* USER CODE END PM */
 
@@ -51,7 +52,7 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
-double Time;
+double Time,ValT;
 uint8_t texto[32],SendFlag=0,AuxLen=0,contador=90;
 int rpm=0,Flag=0,Sensorcounter=0,ft=0,st,Aux=0,pwm=0,Current=0;
 /* USER CODE END PV */
@@ -113,7 +114,7 @@ int main(void)
   HAL_TIM_Base_Start(&htim4);
   HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
   HAL_ADC_Start(&hadc1);
-  int Val=0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,21 +122,28 @@ int main(void)
   while (1)
   {
 	  if(SendFlag==1){
-		  if(__HAL_TIM_GET_COUNTER(&htim4)>=(Time*100)){
-		  		  if(Time>=50){  //Si el tiempo supera el timer entonces:
-		  			  __HAL_TIM_SET_COUNTER(&htim4,0);
-		  			  Time-=50;
-		  		  }
-		  		  else{
-		  			   Clear();
-		  		  }
-		  	  }
-		  	  if(__HAL_TIM_GET_COUNTER(&htim3)>=(1000) ){
-		  			 Current=HAL_ADC_GetValue(&hadc1);
-		  			 Send(02,rpm);
-		  			 Send(03,Current);
-		  			__HAL_TIM_SET_COUNTER(&htim3, 0);
-		  	  }
+		  if(ValT>=5000){
+			  ValT=5000;
+			  if(__HAL_TIM_GET_COUNTER(&htim4)>=(ValT*10)){
+				  Time-=ValT;
+				  ValT=Time;
+				  __HAL_TIM_SET_COUNTER(&htim4, 0);
+			  }
+		  }
+		  else{
+			  if(__HAL_TIM_GET_COUNTER(&htim4)>=(ValT*10)){
+				  __HAL_TIM_SET_COUNTER(&htim4, 0);
+				  Clear();
+			  }
+		  }
+		  if(__HAL_TIM_GET_COUNTER(&htim3)>=(1000) ){	//100ms
+			  Current=HAL_ADC_GetValue(&hadc1);
+			  Send(01,pwm);
+			  HAL_Delay(5);
+			  Send(02,rpm);
+			  //Send(03,Current);
+			  __HAL_TIM_SET_COUNTER(&htim3, 0);
+		  }
 	  }
 
 
@@ -525,7 +533,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void Clear(){
-	rpm=0;
+	//rpm=0;
 	pwm=0;
 	Time=0;
 	TIM1->CCR1=0;
@@ -557,28 +565,32 @@ void Send(int Cmd, int Info){
 	Data[Size+3]=Parity;
 	Data[Size+4]=Stop;
 
-	Contador=strlen(Data);
-	CDC_Transmit_FS(Data,strlen(Data));
+	Contador=sizeof(Data);
+	CDC_Transmit_FS(Data,Size+5);
 	free(Data);
 }
 
 void CDC_ReceiveCallBack(uint8_t* Buf, uint32_t Len){
-	int Cmd,Aux;
-	int Temp=0,Parity=0,Size;
+	int Cmd,Aux,Parity=0,Size;
+	double Temp=0;
+	for(Aux=0;Aux<=Len;Aux++){
+		Temp=Buf[Aux];
+	}
+
 	if(Buf[0]==Start && Buf[Len-1]==Stop){ //Protocolo
-		Size=Buf[1];0
+		Size=Buf[1];
 		Cmd=Buf[2];
 		if(Size==1){
-			Parity=Buf[0]^Buf[1]^Buf[2]^Buf[3];
 			Temp=Buf[3];
 		}
 		else if(Size==2){
 			Temp=(Buf[3]<< 8) | Buf[4];
 		}
-		for(Aux=0;Aux<Len-3;Aux++){
+		for(Aux=0;Aux<Size+3;Aux++){
 			Parity^=Buf[Aux];
 		}
-		if(Buf[Len-2]==Parity){
+		Aux=Buf[Size+3];
+		if(Buf[Size+3]==Parity){
 			if(Cmd==1){ //Le pide a la STM enviar Info
 				SendFlag=1;
 			}
@@ -597,6 +609,7 @@ void CDC_ReceiveCallBack(uint8_t* Buf, uint32_t Len){
 			else if(Cmd==4){ //Tiempo de envio en 100 ms
 				__HAL_TIM_SET_COUNTER(&htim4,0);
 				Time=Temp;
+				ValT=Time;
 			}
 			else if(Cmd==42){		//PWM y Tiempo
 				__HAL_TIM_SET_COUNTER(&htim4,0);

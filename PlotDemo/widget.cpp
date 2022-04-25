@@ -95,7 +95,7 @@ void Widget::makeplot(){
 }
 
 
-void Widget::Send(int cmd,uint16_t Info,uint8_t Tam,uint8_t Info2){
+void Widget::Send(int cmd,uint16_t Info,uint8_t Tam){
     //Protocolo
     uint8_t Count,Parity=0;;
     QByteArray data;
@@ -103,20 +103,14 @@ void Widget::Send(int cmd,uint16_t Info,uint8_t Tam,uint8_t Info2){
     data.append(Start);
     data.append(Tam);
     data.append(cmd);
-    if(Info2==0){
-        if(Tam<2){
-            data.append(Info);
-        }
-        else {
-            data.append(0x00FF & (Info >> 8));
-            data.append(0x00FF & Info);
-
-        }
-        if(Info2!=0){
-            data.append(Info2);
-        }
+    //if(Info2==0){
+    if(Tam<2){
+        data.append(Info);
     }
-
+    else {
+        data.append(0x00FF & (Info >> 8));
+        data.append(0x00FF & Info);
+    }
     for(Count=0;Count<data.length();Count++){
         Parity^=data.at(Count);
     }
@@ -179,33 +173,31 @@ void Widget::processSerial(double data,int cmd){
     qDebug()<< Datos;
     if(cmd==1){
         Rpm=data;
-    }
-    else if(cmd==2){
-        CurrentAct=data;
-    }
-    if(Rpm>10000);
-
-    else{
-
         if(Flag==0){
             RPMMin=Rpm;
             Flag++;
         }
         else{
-            if(RPMMin>Rpm)RPMMin=Rpm;
-            if(RPMMax<Rpm)RPMMax=Rpm;
+            if(RPMMin>Rpm){
+                RPMMin=Rpm;
+            }
+            if(RPMMax<Rpm){
+                RPMMax=Rpm;
+            }
+            RPm=Rpm;
+            Aux=QString::number(RPMMax);
+            ui->RpmAct->setText(Datos);
+            ui->RpmMax->setText(Aux);
+            Aux=QString::number(RPMMin);
+            ui->RpmMin->setText(Aux);
 
         }
-
-        RPm=Rpm;
-
-        Aux=QString::number(RPMMax);
-        ui->RpmAct->setText(Datos);
-        ui->RpmMax->setText(Aux);
-        Aux=QString::number(RPMMin);
-        ui->RpmMin->setText(Aux);
-        makeplot();
     }
+    else if(cmd==2){
+        CurrentAct=data;
+    }
+
+    makeplot();
 
 }
 void Widget::on_pushButton_clicked()
@@ -227,8 +219,10 @@ void Widget::on_pushButton_clicked()
                 else{
                     Tam=2;
                 }
-                Send(42,Time,Tam,Pwm);  //Va hasta 100
-
+                Send(4,Time,Tam);  //Va hasta 100
+                if(ttl->waitForBytesWritten()){
+                    Send(2,Pwm,1);
+                }
             }
             else{
                 QMessageBox msgBox;
@@ -263,8 +257,7 @@ void Widget::on_pushButton_2_clicked()
                 ttl->setParity(QSerialPort::NoParity);
                 ttl->setStopBits(QSerialPort::OneStop);
                 QObject::connect(ttl, SIGNAL(readyRead()), this, SLOT(readSerial()));
-                Send(0,2,1,0);
-                Send(1,2,1,0); //Le abre la Flag a la stm para enviar datos
+                Send(1,5,1);
                 ui->label_12->setText("Conectado");
                 ui->pushButton_2->setText("Cerrar");
 
@@ -274,7 +267,7 @@ void Widget::on_pushButton_2_clicked()
             }
         }
     }else{
-        Send(1,2,1,0); //Le cierra la Flag a la stm para enviar datos
+        Send(0,2,1); //Le cierra la Flag a la stm para enviar datos
         ttl->close();
         QObject::disconnect(ttl, SIGNAL(readyRead()), this, SLOT(readSerial()));
         ui->pushButton_2->setText("Abrir");
@@ -294,9 +287,18 @@ void Widget::on_pushButton_3_clicked()
 
 
 
-
-void Widget::on_pushButton_4_clicked()
+void Widget::on_horizontalSlider_valueChanged(int value)
 {
-    int xd=0;
+    int Tam;
+    QString Slide="Valor Ingresado: "+QString::number(value);
+    ui->label_9->setText(Slide);
+    if(value>=256){
+        Tam=2;
+    }
+    else{
+        Tam=1;
+    }
+
+    Send(3,value,Tam);
 }
 

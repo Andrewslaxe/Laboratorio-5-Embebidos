@@ -20,15 +20,12 @@ public:
 private slots:
     void makeplot();
     void on_pushButton_clicked();
-
     void readSerial();
     void processSerial(double data,int Cmd);
     void on_pushButton_2_clicked();
-    void Send(int cmd,uint16_t Info,uint8_t Tam,uint8_t Info2);
-
+    void Send(int cmd,uint16_t Info,uint8_t Tam);
     void on_pushButton_3_clicked();
-
-    void on_pushButton_4_clicked();
+    void on_horizontalSlider_valueChanged(int value);
 
 private:
     Ui::Widget *ui;
